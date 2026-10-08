@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local data
+data/
+*.csv
+*.json
+
+# Secrets / credentials
+*.pem
+*.key
+credentials.json
+
+# Elasticsearch
+elasticsearch-data/
+
+# Kafka
+kafka-data/
+
+# Grafana
+grafana-data/
+
+# Generated reports
+reports/generated/
+
+# Local configuration
+config.local.*
