@@ -1,4 +1,3 @@
-
 """Rule-based detection engine for normalized security events."""
 
 from dataclasses import dataclass, field
@@ -6,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from detection.event_schema import SecurityEvent
+from detection.mitre.attack_mapping import get_attack_mapping
 
 
 @dataclass
@@ -66,8 +66,6 @@ class DetectionEngine:
                 "event_types": ["process_execution"],
                 "process_names": ["bash", "sh", "zsh", "dash"],
                 "command_contains": ["-c", "base64", "curl", "wget"],
-                "mitre_tactics": ["Execution"],
-                "mitre_techniques": ["T1059"],
             },
             {
                 "id": "DET-002",
@@ -87,8 +85,6 @@ class DetectionEngine:
                     "node",
                 ],
                 "command_contains": [],
-                "mitre_tactics": ["Execution"],
-                "mitre_techniques": ["T1059"],
             },
             {
                 "id": "DET-003",
@@ -100,8 +96,6 @@ class DetectionEngine:
                 "severity": "medium",
                 "event_types": ["network_connection"],
                 "destination_ports": [4444, 5555, 6667, 31337],
-                "mitre_tactics": ["Command and Control"],
-                "mitre_techniques": ["T1571"],
             },
         ]
 
@@ -129,7 +123,6 @@ class DetectionEngine:
     @staticmethod
     def _matches(rule: Dict[str, Any], event: SecurityEvent) -> bool:
         """Check whether an event satisfies a rule's conditions."""
-
         event_types = rule.get("event_types", [])
         if event_types and event.event_type not in event_types:
             return False
@@ -173,8 +166,7 @@ class DetectionEngine:
     def _create_alert(
         rule: Dict[str, Any], event: SecurityEvent
     ) -> DetectionAlert:
-        """Build an alert from a matching rule and event."""
-
+        """Build an alert and obtain its ATT&CK mapping centrally."""
         process = event.process
         network = event.network
 
@@ -197,6 +189,8 @@ class DetectionEngine:
                 "protocol": network.protocol,
             }
 
+        mapping = get_attack_mapping(rule["id"])
+
         return DetectionAlert(
             rule_id=rule["id"],
             rule_name=rule["name"],
@@ -207,7 +201,10 @@ class DetectionEngine:
             source=event.source,
             host=event.host,
             timestamp=event.timestamp,
-            mitre_tactics=rule.get("mitre_tactics", []),
-            mitre_techniques=rule.get("mitre_techniques", []),
+            mitre_tactics=mapping["tactics"],
+            mitre_techniques=[
+                technique["id"]
+                for technique in mapping["techniques"]
+            ],
             evidence=evidence,
         )
