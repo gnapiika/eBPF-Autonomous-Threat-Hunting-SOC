@@ -1,4 +1,5 @@
-"""Rule-based detection engine for normalized security events."""
+
+"""Rule-based detection and correlation engine for security events."""
 
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
@@ -6,11 +7,12 @@ from uuid import uuid4
 
 from detection.event_schema import SecurityEvent
 from detection.mitre.attack_mapping import get_attack_mapping
+from detection.correlation.correlation_engine import CorrelationEngine
 
 
 @dataclass
 class DetectionAlert:
-    """Represents a detection raised by a security rule."""
+    """Represents a detection raised by a rule or correlation."""
 
     rule_id: str
     rule_name: str
@@ -46,10 +48,19 @@ class DetectionAlert:
 
 
 class DetectionEngine:
-    """Evaluate normalized events against configurable detection rules."""
+    """Evaluate events using individual rules and correlation rules."""
 
-    def __init__(self, rules: Optional[List[Dict[str, Any]]] = None):
+    def __init__(
+        self,
+        rules: Optional[List[Dict[str, Any]]] = None,
+        correlation_engine: Optional[CorrelationEngine] = None,
+    ):
         self.rules = rules if rules is not None else self.default_rules()
+        self.correlation_engine = (
+            correlation_engine
+            if correlation_engine is not None
+            else CorrelationEngine()
+        )
 
     @staticmethod
     def default_rules() -> List[Dict[str, Any]]:
@@ -71,18 +82,13 @@ class DetectionEngine:
                 "id": "DET-002",
                 "name": "Script Interpreter Execution",
                 "description": (
-                    "A script interpreter executed a command. "
-                    "Review the process context to determine whether "
-                    "the activity is suspicious."
+                    "A script interpreter executed a command. Review "
+                    "the process context to determine whether it is suspicious."
                 ),
                 "severity": "low",
                 "event_types": ["process_execution"],
                 "process_names": [
-                    "python",
-                    "python3",
-                    "perl",
-                    "ruby",
-                    "node",
+                    "python", "python3", "perl", "ruby", "node"
                 ],
                 "command_contains": [],
             },
@@ -100,7 +106,7 @@ class DetectionEngine:
         ]
 
     def evaluate(self, event: SecurityEvent) -> List[DetectionAlert]:
-        """Return all alerts whose rules match the supplied event."""
+        """Evaluate one event against individual detection rules."""
         alerts: List[DetectionAlert] = []
 
         for rule in self.rules:
@@ -110,13 +116,76 @@ class DetectionEngine:
         return alerts
 
     def evaluate_many(
+        self,
+        events: List[SecurityEvent],
+        include_correlations: bool = True,
+    ) -> List[DetectionAlert]:
+        """Evaluate events and optionally generate correlation alerts."""
+        alerts = self.evaluate_events(events)
+
+        if include_correlations:
+            alerts.extend(self.evaluate_correlations(events))
+
+        return alerts
+
+    def evaluate_events(
         self, events: List[SecurityEvent]
     ) -> List[DetectionAlert]:
-        """Evaluate multiple events and return all generated alerts."""
+        """Run the individual event rules over multiple events."""
         alerts: List[DetectionAlert] = []
 
         for event in events:
             alerts.extend(self.evaluate(event))
+
+        return alerts
+
+    def evaluate_correlations(
+        self, events: List[SecurityEvent]
+    ) -> List[DetectionAlert]:
+        """Convert correlation findings into standard detection alerts."""
+        findings = self.correlation_engine.detect_login_brute_force(events)
+        alerts: List[DetectionAlert] = []
+
+        events_by_id = {event.event_id: event for event in events}
+
+        for finding in findings:
+            correlated_ids = finding.get("event_ids", [])
+            anchor_event = next(
+                (
+                    events_by_id[event_id]
+                    for event_id in reversed(correlated_ids)
+                    if event_id in events_by_id
+                ),
+                None,
+            )
+
+            if anchor_event is None:
+                continue
+
+            alerts.append(
+                DetectionAlert(
+                    rule_id=finding["rule_id"],
+                    rule_name=finding["rule_name"],
+                    severity=finding["severity"],
+                    description=finding["description"],
+                    event_id=anchor_event.event_id,
+                    event_type=anchor_event.event_type,
+                    source=anchor_event.source,
+                    host=finding["host"],
+                    timestamp=anchor_event.timestamp,
+                    mitre_tactics=list(finding.get("mitre_tactics", [])),
+                    mitre_techniques=list(
+                        finding.get("mitre_techniques", [])
+                    ),
+                    evidence={
+                        "username": finding.get("username"),
+                        "source_ip": finding.get("source_ip"),
+                        "failure_count": finding.get("failure_count", 0),
+                        "window_minutes": finding.get("window_minutes"),
+                        "correlated_event_ids": correlated_ids,
+                    },
+                )
+            )
 
         return alerts
 
@@ -153,9 +222,7 @@ class DetectionEngine:
         destination_ports = rule.get("destination_ports", [])
         if destination_ports:
             destination_port = (
-                event.network.destination_port
-                if event.network
-                else None
+                event.network.destination_port if event.network else None
             )
             if destination_port not in destination_ports:
                 return False
@@ -169,7 +236,6 @@ class DetectionEngine:
         """Build an alert and obtain its ATT&CK mapping centrally."""
         process = event.process
         network = event.network
-
         evidence: Dict[str, Any] = {}
 
         if process:
@@ -201,10 +267,10 @@ class DetectionEngine:
             source=event.source,
             host=event.host,
             timestamp=event.timestamp,
-            mitre_tactics=mapping["tactics"],
+            mitre_tactics=list(mapping.get("tactics", [])),
             mitre_techniques=[
                 technique["id"]
-                for technique in mapping["techniques"]
+                for technique in mapping.get("techniques", [])
             ],
             evidence=evidence,
         )
