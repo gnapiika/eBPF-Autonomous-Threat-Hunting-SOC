@@ -1,0 +1,37 @@
+
+[
+  {
+    "event_type": "process_execution",
+    "source": "tetragon",
+    "host": "server-01",
+    "timestamp": "2026-10-14T10:30:00Z",
+    "process": {
+      "name": "bash",
+      "command_line": "bash -c whoami"
+    },
+    "user": {
+      "name": "analyst"
+    }
+  },
+  {
+    "event_type": "network_connection",
+    "source": "tetragon",
+    "host": "server-01",
+    "timestamp": "2026-10-14T10:31:00Z",
+    "network": {
+      "destination_ip": "203.0.113.10",
+      "destination_port": 4444,
+      "protocol": "tcp"
+    }
+  },
+  {
+    "event_type": "file_activity",
+    "source": "falco",
+    "host": "server-02",
+    "timestamp": "2026-10-14T10:32:00Z",
+    "file": {
+      "path": "/tmp/example.sh",
+      "operation": "write"
+    }
+  }
+]

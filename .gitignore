@@ -45,7 +45,9 @@ dist/
 # Local data
 data/
 *.csv
+# Ignore JSON files by default, but track approved project samples
 *.json
+!scripts/sample_telemetry.json
 
 # Secrets / credentials
 *.pem
