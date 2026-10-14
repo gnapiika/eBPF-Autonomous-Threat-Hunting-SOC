@@ -1,0 +1,32 @@
+First check your installed Falco configuration and service:
+
+```bash
+sudo systemctl status falco --no-pager
+sudo grep -n -A5 -B2 'json_output\\|file_output' /etc/falco/falco.yaml
+```
+
+In `/etc/falco/falco.yaml`, ensure JSON output is enabled and file output points to the path below. Configuration layouts can differ by Falco version; merge these settings into the existing configuration rather than replacing the whole file:
+
+```yaml
+json_output: true
+file_output:
+  enabled: true
+  keep_alive: false
+  filename: /var/log/falco/events.json
+```
+
+Then:
+
+```bash
+sudo install -d -m 0750 /var/log/falco
+sudo systemctl restart falco
+sudo systemctl status falco --no-pager
+```
+
+If your Falco package uses a different config path or service name, use the path/service shown by your installation. Verify that the configured output file is being written before proceeding:
+
+```bash
+sudo tail -n 5 /var/log/falco/events.json
+```
+
+Each event should be one JSON object per line. Do not add a second `file_output` block if one already exists.
