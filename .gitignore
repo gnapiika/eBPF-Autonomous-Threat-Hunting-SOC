@@ -46,6 +46,9 @@ dist/
 data/
 *.csv
 *.json
+!dashboard/grafana/
+dashboard/grafana/*
+!dashboard/grafana/soc_dashboard.json
 
 # Secrets / credentials
 *.pem
