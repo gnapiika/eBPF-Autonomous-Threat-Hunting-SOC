@@ -5,8 +5,8 @@
     "name": "adhrbgh",
     "namespace": "default",
     "uid": "2ab821f7-c73d-4d5d-b13f-0a7b00ec31be",
-    "resourceVersion": "1792084975112007",
-    "generation": 4,
+    "resourceVersion": "1792237091227980",
+    "generation": 5,
     "creationTimestamp": "2026-10-13T17:56:30Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "2374741191344128"
@@ -15,7 +15,7 @@
       "grafana.app/createdBy": "user:ag0x6z9oxyrcwb",
       "grafana.app/saved-from-ui": "Grafana v13.2.3 (90ffed056f)",
       "grafana.app/updatedBy": "user:ag0x6z9oxyrcwb",
-      "grafana.app/updatedTimestamp": "2026-10-15T17:22:55Z"
+      "grafana.app/updatedTimestamp": "2026-10-17T11:38:11Z"
     }
   },
   "spec": {
@@ -312,7 +312,34 @@
                   }
                 }
               ],
-              "transformations": [],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "organize",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "_id": true,
+                        "_index": true,
+                        "_type": true,
+                        "highlight": true,
+                        "sort": true,
+                        "source": true
+                      },
+                      "includeByName": {},
+                      "indexByName": {},
+                      "renameByName": {
+                        "@timestamp": "Timestamp",
+                        "event_type": "Event Type",
+                        "host": "Host",
+                        "message": "Event Message",
+                        "process_name": "Process Name",
+                        "severity": "Severity"
+                      }
+                    }
+                  }
+                }
+              ],
               "queryOptions": {}
             }
           },
