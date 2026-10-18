@@ -54,7 +54,7 @@ data/
 *.key
 credentials.json
 
-# Elasticsearch report
+# Elasticsearch 
 elasticsearch-data/
 
 # Kafka
