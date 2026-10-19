@@ -5,7 +5,7 @@
 An eBPF-powered autonomous Security Operations Center (SOC) framework designed
 to monitor Linux systems, detect suspicious behavior, map threats to MITRE
 ATT&CK techniques, perform automated response, collect forensic evidence,
-and visualize the security telemetry in real time.
+and visualize security telemetry in real time.
 
 This project is being developed as part of the Cybersecurity Internship at
 Zaalima Development Pvt. Ltd.
