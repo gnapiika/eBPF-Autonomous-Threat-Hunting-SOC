@@ -21,7 +21,7 @@ telemetry.
 The system aims to do:
 
 - Monitor Linux systems at the kernel level
-- Collect process, file, and network activity
+- Collect process, file, and many network activity
 - Stream telemetry through Apache Kafka
 - Correlate events into process execution chains
 - Detect behavioral anomalies and malicious activity
