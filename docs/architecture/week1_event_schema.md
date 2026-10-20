@@ -4,7 +4,7 @@
 ## 1. Objective
 
 Define a common security event format that converts raw telemetry
-from eBPF, Tetragon, or Falco into structured security events that
+from eBPF, Tetragon, or Falco into a structured security events that
 can be analyzed and mapped to the MITRE ATT&CK.
 
 ## 2. Event Processing Flow
