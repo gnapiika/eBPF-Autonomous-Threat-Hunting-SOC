@@ -28,7 +28,7 @@ The system aims to do:
 - Map detected activity to MITRE ATT&CK
 - Execute automated threat response
 - Collect forensic evidence
-- Visualize threats through a SOC dashboard
+- Visualize many threats through a SOC dashboard
 
 ---
 
