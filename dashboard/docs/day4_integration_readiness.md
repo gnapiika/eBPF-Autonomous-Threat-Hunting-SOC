@@ -68,3 +68,26 @@ Result: NOT VERIFIED
 This report covers Member 4 dashboard readiness only.
 No files outside dashboard/ were modified.
 No Elasticsearch, Kafka, or other team-member configuration was changed.
+
+## Live Telemetry Validation Checklist
+
+Run these checks after the team confirms that the event pipeline is ready.
+
+- [ ] Confirm the expected Elasticsearch index with the team.
+- [ ] Record the current document count before generating test activity.
+- [ ] Confirm that a new event arrives after authorized test activity.
+- [ ] Verify the event timestamp, host, event type, severity, and process fields.
+- [ ] Confirm that the Total Security Events panel reflects the new event.
+- [ ] Confirm that the severity panel includes the new event's severity.
+- [ ] Confirm that the detail table displays the event fields correctly.
+- [ ] Confirm that the trend panel reflects the event timestamp.
+- [ ] Record the test result and any errors.
+
+### Acceptance Criteria
+
+Live telemetry validation passes only when a real event from the agreed pipeline
+is found in Elasticsearch and the relevant Grafana panels display it correctly.
+Synthetic test records alone do not satisfy this criterion.
+
+Do not change Kafka, Elasticsearch, or other team members' implementation
+without coordination and authorization.
