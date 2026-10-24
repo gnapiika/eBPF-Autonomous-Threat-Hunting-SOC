@@ -27,7 +27,7 @@ The system aims to:
 - Detect behavioral anomalies and malicious activity
 - Map detected activity to MITRE ATT&CK
 - Execute automated threat response
-- Collect many forensic evidence
+- Collect forensic evidence
 - Visualize threats through a SOC dashboard
 
 ---
@@ -67,5 +67,5 @@ Detection Engine       Threat Hunting
        Forensic Evidence
                  |
                  v
-       SOC Dashboard
+       SOC Dashboard and 
       Grafana / Kibana
