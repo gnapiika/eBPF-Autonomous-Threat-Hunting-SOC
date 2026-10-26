@@ -28,7 +28,7 @@ The system aims to do:
 - Map detected activity to MITRE ATT&CK
 - Execute automated threat response
 - Collect forensic evidence
-- Visualize many threats through a SOC dashboard
+- Visualize threats through a SOC dashboard
 
 ---
 
@@ -67,5 +67,5 @@ Detection Engine       Threat Hunting
        Forensic Evidence
                  |
                  v
-       SOC Dashboard
+       SOC Dashboard 
       Grafana / Kibana
