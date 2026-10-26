@@ -34,7 +34,7 @@ between collection and downstream processing components.
 - eBPF: Kernel-level event collection.
 - Tetragon: Process and security observability events.
 - Falco: Runtime security event detection.
-- Kafka: Streaming transport for telemetry events.
+- Kafka: Streaming transport for the telemetry events.
 
 The actual source and event format depend on the telemetry
 collector selected and configured by Member 1.
