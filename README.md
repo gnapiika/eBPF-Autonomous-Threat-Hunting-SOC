@@ -5,7 +5,7 @@
 An eBPF-powered autonomous Security Operations Center (SOC) framework designed
 to monitor Linux systems, detect suspicious behavior, map threats to MITRE
 ATT&CK techniques, perform automated response, collect forensic evidence,
-and visualize security telemetry in real time.
+and visualize security telemetry in the real time.
 
 This project is being developed as part of the Cybersecurity Internship at
 Zaalima Development Pvt. Ltd.
@@ -18,7 +18,7 @@ Design a next-generation Security Operations Center (SOC) framework utilizing
 extended Berkeley Packet Filter (eBPF) for deep, low-overhead kernel-level
 telemetry.
 
-The system aims to:
+The system aims to do:
 
 - Monitor Linux systems at the kernel level
 - Collect process, file, and network activity
