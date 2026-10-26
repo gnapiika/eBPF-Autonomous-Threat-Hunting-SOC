@@ -18,7 +18,7 @@ Design a next-generation Security Operations Center (SOC) framework utilizing
 extended Berkeley Packet Filter (eBPF) for deep, low-overhead kernel-level
 telemetry.
 
-The system aims to do:
+The system aims to:
 
 - Monitor Linux systems at the kernel level
 - Collect process, file, and network activity
