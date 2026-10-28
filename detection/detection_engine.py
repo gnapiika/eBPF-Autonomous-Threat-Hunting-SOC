@@ -103,6 +103,18 @@ class DetectionEngine:
                 "event_types": ["network_connection"],
                 "destination_ports": [4444, 5555, 6667, 31337],
             },
+            {
+                "id": "DET-004",
+                "name": "Falco Test File Write",
+                "description": (
+                    "A configured Falco test rule detected a file write. "
+                    "Validate the file activity and process context."
+                ),
+                "severity": "low",
+                "event_types": ["file_activity"],
+                "sources": ["falco"],
+                "metadata_rules": ["SOC Test File Write"],
+            },
         ]
 
     def evaluate(self, event: SecurityEvent) -> List[DetectionAlert]:
@@ -196,6 +208,23 @@ class DetectionEngine:
         if event_types and event.event_type not in event_types:
             return False
 
+        sources = rule.get("sources", [])
+        if sources and event.source.lower() not in [
+            source.lower() for source in sources
+        ]:
+            return False
+
+        metadata_rules = rule.get("metadata_rules", [])
+        if metadata_rules:
+            event_rule = str(
+                event.metadata.get("rule", "")
+            ).strip().lower()
+
+            if event_rule not in [
+                name.lower() for name in metadata_rules
+            ]:
+                return False
+
         process_names = rule.get("process_names", [])
         if process_names:
             process_name = (
@@ -253,6 +282,13 @@ class DetectionEngine:
                 "destination_ip": network.destination_ip,
                 "destination_port": network.destination_port,
                 "protocol": network.protocol,
+            }
+
+        if event.source == "falco":
+            evidence["falco"] = {
+                "rule": event.metadata.get("rule"),
+                "priority": event.metadata.get("priority"),
+                "output": event.metadata.get("output"),
             }
 
         mapping = get_attack_mapping(rule["id"])

@@ -39,14 +39,30 @@ def append_json_line(path: str, record: Dict[str, Any]) -> None:
         output.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
+def identify_source(raw_event: Dict[str, Any]) -> str:
+    """Identify the telemetry format rather than the Falco event subsystem."""
+    if "output_fields" in raw_event and "rule" in raw_event:
+        return "falco"
+
+    source = str(raw_event.get("source", "generic")).lower()
+    if source in {"tetragon", "ebpf", "falco"}:
+        return source
+
+    return "generic"
+
+
 def process_message(
     raw_event: Dict[str, Any],
     normalizer: EventNormalizer,
     engine: DetectionEngine,
 ) -> int:
     """Normalize one message, evaluate it, and persist any alerts."""
-    source = str(raw_event.get("source", "falco")).lower()
-    host = str(raw_event.get("hostname") or raw_event.get("host") or "unknown")
+    source = identify_source(raw_event)
+    host = str(
+        raw_event.get("hostname")
+        or raw_event.get("host")
+        or "unknown"
+    )
 
     event = normalizer.normalize(
         raw_event=raw_event,
@@ -68,9 +84,7 @@ def process_message(
         return 0
 
     for alert in alerts:
-        alert_record = alert.to_dict()
-        append_json_line(OUTPUT_FILE, alert_record)
-
+        append_json_line(OUTPUT_FILE, alert.to_dict())
         logger.warning(
             "DETECTION rule=%s name=%s severity=%s host=%s "
             "MITRE_tactics=%s MITRE_techniques=%s",
@@ -86,49 +100,50 @@ def process_message(
 
 
 def main() -> int:
-    """Start consuming Kafka events until interrupted."""
+    """Consume security events until interrupted."""
     normalizer = EventNormalizer()
     engine = DetectionEngine()
 
     try:
         consumer = KafkaConsumer(
-            KAFKA_TOPIC,
             bootstrap_servers=BOOTSTRAP_SERVERS,
             group_id=KAFKA_GROUP_ID,
-            auto_offset_reset="latest",
             enable_auto_commit=False,
+            auto_offset_reset="latest",
             value_deserializer=lambda value: json.loads(
                 value.decode("utf-8")
             ),
-            consumer_timeout_ms=1000,
         )
+        consumer.subscribe([KAFKA_TOPIC])
     except KafkaError as exc:
         logger.error("Could not connect to Kafka: %s", exc)
         return 1
 
     logger.info("Connected to Kafka at %s", BOOTSTRAP_SERVERS)
-    logger.info("Consuming topic %s", KAFKA_TOPIC)
+    logger.info("Subscribed to topic %s", KAFKA_TOPIC)
     logger.info("Detection alerts will be appended to %s", OUTPUT_FILE)
 
     try:
         while True:
+            # poll() also drives group coordination and partition assignment.
             received = consumer.poll(timeout_ms=1000)
+
+            assignment = consumer.assignment()
+            if assignment:
+                logger.debug("Assigned partitions: %s", assignment)
+            elif not received:
+                logger.debug("Waiting for Kafka partition assignment.")
 
             for _partition, messages in received.items():
                 for message in messages:
                     try:
-                        if not isinstance(message.value, dict):
+                        raw_event = message.value
+                        if not isinstance(raw_event, dict):
                             raise ValueError(
                                 "Kafka message must contain a JSON object"
                             )
 
-                        process_message(
-                            message.value,
-                            normalizer,
-                            engine,
-                        )
-
-                        # Commit only after processing the message.
+                        process_message(raw_event, normalizer, engine)
                         consumer.commit()
 
                     except (
@@ -144,9 +159,18 @@ def main() -> int:
                             message.offset,
                             exc,
                         )
-                        # Do not commit an invalid message automatically.
+                    except Exception:
+                        logger.exception(
+                            "Failed to process event at partition=%s offset=%s",
+                            message.partition,
+                            message.offset,
+                        )
+
     except KeyboardInterrupt:
         logger.info("Stopping Kafka detection consumer.")
+    except KafkaError:
+        logger.exception("Kafka consumer encountered an error.")
+        return 1
     finally:
         consumer.close()
 
