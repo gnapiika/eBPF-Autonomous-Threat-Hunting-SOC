@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from urllib.error import URLError
 from unittest.mock import MagicMock, patch
 
@@ -43,6 +44,29 @@ def test_sends_alert_as_json_post_to_n8n():
     assert payload["alert"]["rule_id"] == "DET-001"
     assert payload["alert"]["host"] == "test-server"
     assert urlopen.call_args.kwargs["timeout"] == 8
+
+
+@pytest.mark.parametrize(
+    ("severity", "alert_id"),
+    [
+        ("high", "TEST-HIGH-001"),
+        ("medium", "TEST-MEDIUM-001"),
+    ],
+)
+def test_sends_high_and_medium_alert_fields_without_loss(severity, alert_id):
+    alert = replace(make_alert(), severity=severity, alert_id=alert_id)
+    response = MagicMock()
+    response.__enter__.return_value.status = 200
+    client = N8nWebhookClient("http://localhost/webhook")
+
+    with patch("soar.n8n_webhook.urlopen", return_value=response) as urlopen:
+        assert client.send_alert(alert) == 200
+
+    payload = json.loads(urlopen.call_args.args[0].data.decode("utf-8"))
+    assert payload["alert"]["alert_id"] == alert_id
+    assert payload["alert"]["severity"] == severity
+    assert payload["alert"]["rule_id"] == "DET-001"
+    assert payload["alert"]["host"] == "test-server"
 
 
 @pytest.mark.parametrize(

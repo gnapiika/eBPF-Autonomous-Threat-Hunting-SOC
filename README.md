@@ -185,3 +185,19 @@ network connections, or perform automated remediation.
 - Document and preserve test evidence.
 - Commit the Week 1 integration files to the `member3-soar` GitHub branch.
 - Develop safe, simulated response workflows in the next phase.
+
+## Week 2 n8n Alert Routing
+
+Week 2 adds a severity check and safe simulated response labels to the n8n
+workflow. See the [Week 2 guide](docs/week-2-n8n-alert-routing.md) for the
+workflow configuration, test results, and repeatable test instructions.
+
+## Week 3 Response and Evidence Collection
+
+Week 3 now includes safe dry-run response planning and forensic evidence
+bundles from normalized events. See the
+[Week 3 remediation and evidence guide](docs/week-3-remediation-and-evidence.md)
+for the implementation, test instructions, limitations, and remaining live
+containment requirements. The separate
+[n8n response guide](docs/week-3-n8n-alert-response.md) covers simulated
+workflow labels; it does not represent host remediation.
