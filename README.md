@@ -176,7 +176,7 @@ The live Falco-to-Kafka-to-detection pipeline has also been demonstrated with a 
 
 ## 9. Future Enhancements
 
-- Improve process-chain correlation and behavioral detection.
+- Improve process chain correlation and behavioral detection.
 - Expand telemetry coverage and validate additional attack scenarios.
 - Complete SOAR, Elasticsearch, and dashboard integration.
 - Improve forensic evidence collection and alert investigation.
