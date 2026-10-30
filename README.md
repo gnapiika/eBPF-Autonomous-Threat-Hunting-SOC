@@ -1,96 +1,90 @@
 # eBPF-Powered Autonomous Threat Hunting SOC
 
-An intelligent Security Operations Center (SOC) framework designed to monitor Linux systems, detect suspicious activities, map threats to MITRE ATT&CK, automate incident response, and visualize security events.
+An intelligent Security Operations Center (SOC) framework that monitors Linux systems, detects suspicious activities, maps threats to MITRE ATT&CK, and supports automated incident response and security visualization.
 
 **Developed as part of the Cybersecurity Internship at Zaalima Development Pvt. Ltd.**
 
 ## 1. Project Overview
 
-Traditional security monitoring systems can generate large volumes of logs, making threat detection and investigation time-consuming. This project aims to build a modular SOC framework that collects Linux telemetry, analyzes suspicious behavior, generates security alerts, and supports automated response.
+Traditional security monitoring systems generate large volumes of logs, making threat detection and investigation challenging. This project aims to simplify security monitoring through automated telemetry collection, behavioral analysis, threat detection, and incident response.
 
 ### Objectives
-
-- Monitor process, file, and network activity on Linux systems.
-- Collect and stream security events using eBPF-based monitoring and Apache Kafka.
-- Normalize and correlate events for threat detection.
-- Detect behavioral anomalies and suspicious activity.
-- Map relevant detections to MITRE ATT&CK.
-- Support automated response through SOAR workflows.
-- Preserve forensic evidence and visualize security alerts.
+- Monitor Linux process, file, and network activities.
+- Collect and stream security events using eBPF-based tools and Apache Kafka.
+- Normalize and analyze events for suspicious behavior.
+- Detect threats using rule-based and behavioral analysis.
+- Map detections to MITRE ATT&CK.
+- Support automated incident response through SOAR workflows.
+- Store forensic evidence and visualize security alerts.
 
 ## 2. System Architecture
 
 ```text
 Linux Systems
-      |
-      v
+     |
+     v
 eBPF / Falco / Tetragon
-      |
-      v
+     |
+     v
 Apache Kafka
-      |
-      v
+     |
+     v
 Event Processing
-      |
-      +-------------------+
-      |                   |
-      v                   v
-Detection Engine     Threat Hunting
-      |                   |
-      +---------+---------+
-                |
-                v
-        MITRE ATT&CK Mapping
-                |
-                v
-          Alert Generation
-                |
-                v
+     |
+     +-------------------+
+     |                   |
+     v                   v
+Detection Engine    Threat Hunting
+     |                   |
+     +---------+---------+
+               |
+               v
+       MITRE ATT&CK Mapping
+               |
+               v
+         Alert Generation
+               |
+               v
           SOAR / n8n
-                |
-                v
-       Automated Response
-                |
-                v
-      Elasticsearch / Storage
-                |
-                v
+               |
+               v
+      Automated Response
+               |
+               v
+    Elasticsearch / Storage
+               |
+               v
        Grafana / Kibana
 ```
 
-The diagram represents the intended architecture. Individual integrations are validated as development progresses.
+*The architecture represents the overall system design. Integrations are validated progressively during development.*
 
 ## 3. Technology Stack
 
 | Technology | Purpose |
 |---|---|
-| Python | Event processing and detection |
-| eBPF / Falco / Tetragon | Linux telemetry collection |
-| Apache Kafka | Security event streaming |
+| Python | Event processing and threat detection |
+| eBPF, Falco, Tetragon | Linux telemetry collection |
+| Apache Kafka | Real-time event streaming |
 | MITRE ATT&CK | Threat classification |
-| n8n / Cortex | SOAR and response workflows |
-| Elasticsearch | Security data indexing and search |
+| n8n / Cortex | SOAR and incident response |
+| Elasticsearch | Security data storage and search |
 | Grafana / Kibana | Security dashboards |
 | pytest | Automated testing |
-| Git and GitHub | Version control and collaboration |
+| Git / GitHub | Version control |
 
 ## 4. Core Modules
 
-**Telemetry Collection:** Collects relevant Linux system events through configured monitoring tools.
+- **Telemetry Collection:** Monitors Linux system activities using configured security monitoring tools.
+- **Event Processing:** Normalizes raw telemetry into structured security events and streams them through Kafka.
+- **Detection Engine:** Identifies suspicious activities using detection rules and statistical anomaly analysis.
+- **Threat Hunting:** Investigates suspicious patterns and maps supported detections to MITRE ATT&CK.
+- **SOAR Integration:** Supports webhook-based alert routing and automated response workflows.
+- **Forensics and Visualization:** Preserves alert evidence and supports security monitoring through dashboards.
 
-**Event Processing:** Normalizes telemetry into a consistent security-event format and streams events through Kafka.
+## 5. Sample Security Alert
 
-**Detection Engine:** Uses rule-based detection, behavioral analysis, and statistical anomaly detection to identify suspicious activity.
-
-**Threat Hunting and MITRE ATT&CK:** Investigates suspicious patterns and associates supported findings with relevant attack tactics and techniques.
-
-**SOAR Integration:** Connects alerts to webhook-based workflows for severity-based routing and configured response actions.
-
-**Forensics and Visualization:** Records alert evidence and supports security monitoring through an Elasticsearch-backed dashboard architecture.
-
-## 5. Alert Format
-
-Security alerts use structured JSON to communicate information between modules. The following is a simplified example:
+Alerts are generated in structured JSON format to enable communication between system modules.
 
 ```json
 {
@@ -105,16 +99,15 @@ Security alerts use structured JSON to communicate information between modules. 
 }
 ```
 
-The exact payload structure depends on the agreed interface between the detection engine and the SOAR webhook.
+*The final alert structure depends on the interface agreed upon between the detection engine and SOAR integration.*
 
 ## 6. Installation and Setup
 
 ### Prerequisites
-
 - Python 3
-- Linux or Ubuntu on WSL2
+- Linux / Ubuntu on WSL2
 - Docker and Apache Kafka
-- Configured Falco installation
+- Falco installation
 - Git
 
 ### Clone the Repository
@@ -124,14 +117,14 @@ git clone https://github.com/gnapiika/eBPF-Autonomous-Threat-Hunting-SOC.git
 cd eBPF-Autonomous-Threat-Hunting-SOC
 ```
 
-### Create a Virtual Environment
+### Create Virtual Environment
 
 ```bash
 python3 -m venv .venv-wsl
 source .venv-wsl/bin/activate
 ```
 
-Install dependencies using the repository's dependency file, if available.
+Install the required dependencies using the repository's dependency file, if available.
 
 ### Start Kafka
 
@@ -147,13 +140,13 @@ PYTHONPATH=. python telemetry/falco/falco_kafka_forwarder.py
 
 ### Run the Detection Consumer
 
-In a separate terminal, activate the virtual environment and run:
+In a separate terminal:
 
 ```bash
 PYTHONPATH=. python telemetry/kafka_detection_consumer.py
 ```
 
-## 7. Testing
+## 7. Testing and Validation
 
 Run the automated test suite:
 
@@ -161,9 +154,9 @@ Run the automated test suite:
 python -m pytest -q
 ```
 
-**Latest recorded result:** 45 tests passed.
+**Latest recorded result: 45 tests passed.**
 
-The live Falco-to-Kafka-to-detection pipeline has also been demonstrated with a test file-activity event. Further validation is required for complete SOAR, Elasticsearch, and dashboard integration.
+The Falco-to-Kafka-to-detection pipeline has also been demonstrated using a test file-activity event. Further integration testing is ongoing for SOAR, Elasticsearch, and dashboard components.
 
 ## 8. Team Responsibilities
 
@@ -176,14 +169,14 @@ The live Falco-to-Kafka-to-detection pipeline has also been demonstrated with a 
 
 ## 9. Future Enhancements
 
-- Improve process chain correlation and behavioral detection.
-- Expand telemetry coverage and validate additional attack scenarios.
-- Complete SOAR, Elasticsearch, and dashboard integration.
-- Improve forensic evidence collection and alert investigation.
-- Strengthen error handling, reliability, and integration testing.
+- Expand telemetry collection and attack scenario coverage.
+- Improve behavioral detection and process-chain correlation.
+- Complete SOAR and dashboard integrations.
+- Enhance forensic evidence collection and investigation.
+- Improve system reliability and integration testing.
 
 ## 10. Contributors
 
-Developed collaboratively by the cybersecurity internship team at **Zaalima Development Pvt. Ltd.**
+Developed collaboratively by the Cybersecurity Internship team at **Zaalima Development Pvt. Ltd.**
 
-**Repository:** [eBPF-Autonomous-Threat-Hunting-SOC](https://github.com/gnapiika/eBPF-Autonomous-Threat-Hunting-SOC)
+**GitHub Repository:** [eBPF-Autonomous-Threat-Hunting-SOC](https://github.com/gnapiika/eBPF-Autonomous-Threat-Hunting-SOC)
