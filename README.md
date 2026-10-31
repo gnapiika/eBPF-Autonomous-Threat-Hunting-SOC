@@ -124,7 +124,7 @@ python3 -m venv .venv-wsl
 source .venv-wsl/bin/activate
 ```
 
-Install the required dependencies using the repository's dependency file, if available.
+Install all the required dependencies using the repository's dependency file, if available.
 
 ### Start Kafka
 
