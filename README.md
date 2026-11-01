@@ -6,7 +6,7 @@ An intelligent Security Operations Center (SOC) framework that monitors Linux sy
 
 ## 1. Project Overview
 
-Traditional security monitoring systems generate large volumes of logs, making threat detection and investigation challenging. This project aims to simplify security monitoring through automated telemetry collection, behavioral analysis, threat detection, and incident response.
+Traditional security monitoring systems generate large volumes of logs, making threat detection and investigation challenging. This project aims to simplify security monitoring through automated telemetry collection, behavioral analysis, threat detections, and incident response.
 
 ### Objectives
 - Monitor Linux process, file, and network activities.
