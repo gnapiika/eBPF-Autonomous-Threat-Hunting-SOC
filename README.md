@@ -10,7 +10,7 @@ Traditional security monitoring systems generate large volumes of logs, making t
 
 ### Objectives
 - Monitor Linux process, file, and network activities.
-- Collect and stream security events using eBPF-based tools and Apache Kafka.
+- Collect and stream all security events using eBPF-based tools and Apache Kafka.
 - Normalize and analyze events for suspicious behavior.
 - Detect threats using rule-based and behavioral analysis.
 - Map detections to MITRE ATT&CK.
