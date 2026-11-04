@@ -15,7 +15,7 @@ Traditional security monitoring systems generate large volumes of logs, making t
 - Detect threats using rule-based and behavioral analysis.
 - Map detections to MITRE ATT&CK.
 - Support automated incident response through SOAR workflows.
-- Store forensic evidence and visualize security alerts.
+- Store forensic evidence and visualize the security alerts.
 
 ## 2. System Architecture
 
