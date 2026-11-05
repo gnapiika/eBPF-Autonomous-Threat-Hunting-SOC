@@ -6,6 +6,7 @@ __pycache__/
 
 # Virtual environments
 .venv/
+.venv-wsl/
 venv/
 env/
 ENV/
@@ -45,7 +46,13 @@ dist/
 # Local data
 data/
 *.csv
+
+# Ignore JSON files by default, but track approved project samples
 *.json
+!scripts/sample_telemetry.json
+
+# Generated runtime output
+telemetry/detection_alerts.jsonl
 
 # Secrets / credentials
 *.pem
