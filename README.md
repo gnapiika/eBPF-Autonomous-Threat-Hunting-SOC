@@ -99,7 +99,7 @@ Alerts are generated in structured JSON format to enable communication between s
 }
 ```
 
-*The final alert structure depends on the interface agreed upon between the detection engine and SOAR integration.*
+*The final alert structure depends mainly on the interface agreed upon between the detection engine and SOAR integration.*
 
 ## 6. Installation and Setup
 
