@@ -73,7 +73,7 @@ Detection Engine    Threat Hunting
 | pytest | Automated testing |
 | Git / GitHub | Version control |
 
-## 4. Core Modules
+## 4. The Core Modules
 
 - **Telemetry Collection:** Monitors Linux system activities using configured security monitoring tools.
 - **Event Processing:** Normalizes raw telemetry into structured security events and streams them through Kafka.
