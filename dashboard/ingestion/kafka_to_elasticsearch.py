@@ -1,13 +1,19 @@
+
 import json
 import logging
 import os
 import signal
 import uuid
 
-from datetime import datetime, timezone
-
 from kafka import KafkaConsumer
 from elasticsearch import Elasticsearch
+
+from detection.event_schema import (
+    SecurityEvent,
+    ProcessInfo,
+    NetworkInfo,
+)
+from detection.detection_engine import DetectionEngine
 
 
 logging.basicConfig(
@@ -17,17 +23,21 @@ logging.basicConfig(
 
 log = logging.getLogger("member4-ingestion")
 
-KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+KAFKA_BOOTSTRAP = os.getenv(
+    "KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"
+)
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "security-events")
 KAFKA_GROUP = os.getenv("KAFKA_GROUP_ID", "member4-es-ingestor")
 
 ES_URL = os.getenv("ELASTICSEARCH_URL", "https://localhost:9200")
 ES_USERNAME = os.getenv("ELASTICSEARCH_USERNAME", "elastic")
 ES_PASSWORD = os.environ.get("ELASTICSEARCH_PASSWORD")
+
 ES_CA_CERT = os.getenv(
     "ELASTICSEARCH_CA_CERT",
     "/home/chetan/http_ca.crt",
 )
+
 ES_INDEX = os.getenv("ELASTICSEARCH_INDEX", "security-events")
 
 running = True
@@ -44,7 +54,7 @@ signal.signal(signal.SIGTERM, stop_handler)
 
 
 def normalize_event(raw):
-    """Normalize a Falco event using Member 2's documented mappings."""
+    """Normalize a Falco event for Elasticsearch and Grafana."""
 
     output = raw.get("output_fields") or {}
 
@@ -56,7 +66,6 @@ def normalize_event(raw):
 
     rule = str(raw.get("rule") or "unknown").lower().strip()
 
-    # Match Member 2's event-type mappings.
     if "shell" in rule or "command" in rule:
         event_type = "process_execution"
     elif "network" in rule or "connection" in rule:
@@ -68,8 +77,9 @@ def normalize_event(raw):
     else:
         event_type = rule
 
-    # Match Member 2's severity mappings.
-    priority = str(raw.get("priority") or "info").lower().strip()
+    priority = str(
+        raw.get("priority") or "info"
+    ).lower().strip()
 
     severity_map = {
         "emergency": "critical",
@@ -90,8 +100,6 @@ def normalize_event(raw):
 
     severity = severity_map.get(priority, "info")
 
-    host = raw.get("hostname") or "unknown"
-
     process = {
         "pid": output.get("proc.pid"),
         "ppid": output.get("proc.ppid"),
@@ -100,12 +108,6 @@ def normalize_event(raw):
         "command_line": output.get("proc.cmdline"),
         "parent_name": output.get("proc.pname"),
         "parent_executable": None,
-    }
-
-    user = {
-        "uid": output.get("user.uid"),
-        "gid": output.get("user.gid"),
-        "username": output.get("user.name"),
     }
 
     network = {
@@ -119,19 +121,22 @@ def normalize_event(raw):
     event_id = str(uuid.uuid4())
     message = raw.get("output", "")
 
-    # Normalized fields + backward-compatible Grafana fields.
     document = {
         "event_id": event_id,
         "timestamp": timestamp,
         "@timestamp": timestamp,
         "event_type": event_type,
         "source": "falco",
-        "host": host,
+        "host": raw.get("hostname") or "unknown",
         "severity": severity,
         "process_name": process["name"],
         "message": message,
         "process": process,
-        "user": user,
+        "user": {
+            "uid": output.get("user.uid"),
+            "gid": output.get("user.gid"),
+            "username": output.get("user.name"),
+        },
         "network": network,
         "file": {
             "path": output.get("fd.name"),
@@ -154,9 +159,76 @@ def normalize_event(raw):
     return document
 
 
+def detect_security_alerts(document, detection_engine):
+    """Convert normalized data and evaluate detection rules."""
+
+    process_data = document.get("process") or {}
+    network_data = document.get("network") or {}
+
+    event = SecurityEvent(
+        event_id=document.get("event_id"),
+        event_type=document.get("event_type", "unknown"),
+        source=document.get("source", "falco"),
+        host=document.get("host", "unknown"),
+        timestamp=document.get("timestamp"),
+        severity=document.get("severity", "info"),
+
+        process=ProcessInfo(
+            pid=process_data.get("pid"),
+            ppid=process_data.get("ppid"),
+            name=process_data.get("name"),
+            executable=process_data.get("executable"),
+            command_line=process_data.get("command_line"),
+            parent_name=process_data.get("parent_name"),
+            parent_executable=process_data.get(
+                "parent_executable"
+            ),
+        ),
+
+        network=NetworkInfo(
+            source_ip=network_data.get("source_ip"),
+            source_port=network_data.get("source_port"),
+            destination_ip=network_data.get("destination_ip"),
+            destination_port=network_data.get(
+                "destination_port"
+            ),
+            protocol=network_data.get("protocol"),
+        ),
+    )
+
+    alerts = detection_engine.evaluate(event)
+
+    alert_documents = []
+
+    for alert in alerts:
+        alert_document = alert.to_dict()
+
+        alert_document["@timestamp"] = (
+            alert_document.get("timestamp")
+        )
+
+        alert_document["event_type"] = "security_alert"
+        alert_document["source"] = "detection_engine"
+
+        alert_document["original_event_id"] = (
+            document.get("event_id")
+        )
+
+        alert_document["message"] = (
+            alert_document.get("description", "")
+        )
+
+        alert_documents.append(alert_document)
+
+    return alert_documents
+
+
 def main():
+
     if not ES_PASSWORD:
-        raise RuntimeError("ELASTICSEARCH_PASSWORD environment variable is missing")
+        raise RuntimeError(
+            "ELASTICSEARCH_PASSWORD environment variable is missing"
+        )
 
     es = Elasticsearch(
         ES_URL,
@@ -166,10 +238,17 @@ def main():
     )
 
     if not es.ping():
-        raise RuntimeError("Cannot connect to Elasticsearch")
+        raise RuntimeError(
+            "Cannot connect to Elasticsearch"
+        )
 
     log.info("Elasticsearch connected: %s", ES_URL)
     log.info("Target index: %s", ES_INDEX)
+
+    detection_engine = DetectionEngine()
+
+    log.info("Detection Engine initialized")
+    log.info("MITRE ATT&CK enrichment enabled")
 
     consumer = KafkaConsumer(
         KAFKA_TOPIC,
@@ -181,57 +260,123 @@ def main():
     )
 
     log.info("Kafka consumer started")
-    log.info("Topic: %s | Group: %s", KAFKA_TOPIC, KAFKA_GROUP)
+    log.info(
+        "Topic: %s | Group: %s",
+        KAFKA_TOPIC,
+        KAFKA_GROUP,
+    )
+
     log.info("Waiting for new Falco events...")
 
     try:
+
         while running:
-            records = consumer.poll(timeout_ms=1000, max_records=1)
+
+            records = consumer.poll(
+                timeout_ms=1000,
+                max_records=1,
+            )
 
             for partition_records in records.values():
+
                 for record in partition_records:
+
                     try:
-                        raw = json.loads(record.value.decode("utf-8"))
+
+                        raw = json.loads(
+                            record.value.decode("utf-8")
+                        )
 
                         if not isinstance(raw, dict):
-                            raise ValueError("Kafka event must be a JSON object")
+                            raise ValueError(
+                                "Kafka event must be a JSON object"
+                            )
 
                         document = normalize_event(raw)
 
-                        result = es.index(
+                        # Evaluate the normalized event.
+                        alert_documents = detect_security_alerts(
+                            document,
+                            detection_engine,
+                        )
+
+                        # Index original Falco event.
+                        event_result = es.index(
                             index=ES_INDEX,
                             document=document,
                             id=document["event_id"],
                         )
 
-                        # Commit only after Elasticsearch confirms indexing.
+                        log.info(
+                            "Event indexed: id=%s result=%s",
+                            document["event_id"],
+                            event_result["result"],
+                        )
+
+                        # Index generated security alerts.
+                        for alert_document in alert_documents:
+
+                            alert_id = alert_document.get(
+                                "alert_id"
+                            )
+
+                            if not alert_id:
+                                raise ValueError(
+                                    "Detection alert has no alert_id"
+                                )
+
+                            alert_result = es.index(
+                                index=ES_INDEX,
+                                document=alert_document,
+                                id=alert_id,
+                            )
+
+                            log.warning(
+                                "SECURITY ALERT indexed: "
+                                "alert_id=%s rule=%s "
+                                "tactics=%s techniques=%s "
+                                "result=%s",
+                                alert_id,
+                                alert_document.get("rule_id"),
+                                alert_document.get("mitre_tactics"),
+                                alert_document.get("mitre_techniques"),
+                                alert_result["result"],
+                            )
+
+                        # Commit only after all indexing succeeds.
                         consumer.commit()
 
                         log.info(
-                            "Indexed event_id=%s event_type=%s severity=%s "
-                            "ES_result=%s partition=%s offset=%s",
-                            document["event_id"],
-                            document["event_type"],
-                            document["severity"],
-                            result["result"],
+                            "Kafka offset committed: "
+                            "partition=%s offset=%s "
+                            "alerts=%s",
                             record.partition,
                             record.offset,
+                            len(alert_documents),
                         )
 
                     except Exception:
+
                         log.exception(
-                            "Event processing failed at partition=%s offset=%s. "
+                            "Event processing failed at "
+                            "partition=%s offset=%s. "
                             "Offset was not committed.",
                             record.partition,
                             record.offset,
                         )
+
                         raise
 
     finally:
+
         consumer.close()
         es.close()
-        log.info("Kafka consumer and Elasticsearch client closed")
+
+        log.info(
+            "Kafka consumer and Elasticsearch client closed"
+        )
 
 
 if __name__ == "__main__":
     main()
+
