@@ -84,7 +84,7 @@ Detection Engine    Threat Hunting
 
 ## 5. Sample Security Alert
 
-Alerts are generated in structured JSON format to enable communication between system modules.
+Alerts are generated in a structured JSON format to enable communication between system modules.
 
 ```json
 {
