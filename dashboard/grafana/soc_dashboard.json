@@ -5,17 +5,18 @@
     "name": "adhrbgh",
     "namespace": "default",
     "uid": "2ab821f7-c73d-4d5d-b13f-0a7b00ec31be",
-    "resourceVersion": "1792416789082981",
-    "generation": 15,
+    "resourceVersion": "1794574805064010",
+    "generation": 24,
     "creationTimestamp": "2026-10-13T17:56:30Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "2374741191344128"
     },
     "annotations": {
       "grafana.app/createdBy": "user:ag0x6z9oxyrcwb",
+      "grafana.app/folder": "",
       "grafana.app/saved-from-ui": "Grafana v13.2.3 (90ffed056f)",
       "grafana.app/updatedBy": "user:ag0x6z9oxyrcwb",
-      "grafana.app/updatedTimestamp": "2026-10-19T13:33:09Z"
+      "grafana.app/updatedTimestamp": "2026-11-13T13:00:05Z"
     }
   },
   "spec": {
@@ -131,6 +132,362 @@
                   },
                   "color": {
                     "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "MITRE ATT&CK Tactics Distribution",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "elasticsearch",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "bg10tjcobatq8c"
+                      },
+                      "spec": {
+                        "alias": "",
+                        "bucketAggs": [
+                          {
+                            "field": "@timestamp",
+                            "id": "2",
+                            "settings": {
+                              "interval": "auto"
+                            },
+                            "type": "date_histogram"
+                          }
+                        ],
+                        "editorType": "code",
+                        "metrics": [
+                          {
+                            "id": "1",
+                            "type": "count"
+                          }
+                        ],
+                        "preserveQuery": false,
+                        "query": "FROM security-events\n| WHERE event_type == \"security_alert\"\n| STATS alert_count = COUNT(*) BY mitre_tactics\n| SORT alert_count DESC",
+                        "queryType": "esql",
+                        "timeField": "@timestamp"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "barchart",
+            "version": "13.2.3",
+            "spec": {
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "auto",
+                "stacking": "none",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                },
+                "xField": "mitre_tactics",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "fillOpacity": 80,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 1,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "- MITRE ATT&CK Techniques Distribution",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "elasticsearch",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "bg10tjcobatq8c"
+                      },
+                      "spec": {
+                        "alias": "",
+                        "bucketAggs": [
+                          {
+                            "field": "@timestamp",
+                            "id": "2",
+                            "settings": {
+                              "interval": "auto"
+                            },
+                            "type": "date_histogram"
+                          }
+                        ],
+                        "editorType": "code",
+                        "metrics": [
+                          {
+                            "id": "1",
+                            "type": "count"
+                          }
+                        ],
+                        "preserveQuery": false,
+                        "query": "FROM security-events\n| WHERE event_type == \"security_alert\"\n| STATS alert_count = COUNT(*) BY mitre_techniques\n| SORT alert_count DESC",
+                        "queryType": "esql",
+                        "timeField": "@timestamp"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "barchart",
+            "version": "13.2.3",
+            "spec": {
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "auto",
+                "stacking": "none",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "fillOpacity": 80,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 1,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "SOAR Response Status",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "elasticsearch",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "bg10tjcobatq8c"
+                      },
+                      "spec": {
+                        "alias": "",
+                        "bucketAggs": [
+                          {
+                            "field": "@timestamp",
+                            "id": "2",
+                            "settings": {
+                              "interval": "auto"
+                            },
+                            "type": "date_histogram"
+                          }
+                        ],
+                        "editorType": "code",
+                        "metrics": [
+                          {
+                            "id": "1",
+                            "type": "count"
+                          }
+                        ],
+                        "preserveQuery": false,
+                        "query": "FROM security-events\n| WHERE event_type == \"security_alert\"\n| EVAL response_status = \"Not Integrated\"\n| STATS alert_count = COUNT(*) BY response_status",
+                        "queryType": "esql",
+                        "timeField": "@timestamp"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.2.3",
+            "spec": {
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
                   }
                 },
                 "overrides": []
@@ -520,6 +877,551 @@
             }
           }
         }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "id": 5,
+          "title": "Security Events by Host",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "elasticsearch",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "bg10tjcobatq8c"
+                      },
+                      "spec": {
+                        "alias": "",
+                        "bucketAggs": [
+                          {
+                            "field": "@timestamp",
+                            "id": "2",
+                            "settings": {
+                              "interval": "auto"
+                            },
+                            "type": "date_histogram"
+                          }
+                        ],
+                        "editorType": "code",
+                        "metrics": [
+                          {
+                            "id": "1",
+                            "type": "count"
+                          }
+                        ],
+                        "preserveQuery": false,
+                        "query": "FROM security-events\n| STATS event_count = COUNT(*) BY host\n| SORT event_count DESC",
+                        "queryType": "esql",
+                        "timeField": "@timestamp"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "barchart",
+            "version": "13.2.3",
+            "spec": {
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.9,
+                "fullHighlight": false,
+                "groupWidth": 0.8,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "never",
+                "stacking": "none",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                },
+                "xField": "time",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 100
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "#ad46ff"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "fillOpacity": 100,
+                    "gradientMode": "hue",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 1,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Process Activity",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "elasticsearch",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "bg10tjcobatq8c"
+                      },
+                      "spec": {
+                        "alias": "",
+                        "bucketAggs": [
+                          {
+                            "field": "@timestamp",
+                            "id": "2",
+                            "settings": {
+                              "interval": "auto"
+                            },
+                            "type": "date_histogram"
+                          }
+                        ],
+                        "editorType": "code",
+                        "metrics": [
+                          {
+                            "id": "1",
+                            "type": "count"
+                          }
+                        ],
+                        "preserveQuery": false,
+                        "query": "FROM security-events\n| STATS event_count = COUNT(*) BY process_name\n| SORT event_count DESC",
+                        "queryType": "esql",
+                        "timeField": "@timestamp"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "barchart",
+            "version": "13.2.3",
+            "spec": {
+              "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "fullHighlight": false,
+                "groupWidth": 0.7,
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "auto",
+                "stacking": "none",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "fillOpacity": 80,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "lineWidth": 1,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Security Events by Type",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "elasticsearch",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "bg10tjcobatq8c"
+                      },
+                      "spec": {
+                        "alias": "",
+                        "bucketAggs": [
+                          {
+                            "field": "@timestamp",
+                            "id": "2",
+                            "settings": {
+                              "interval": "auto"
+                            },
+                            "type": "date_histogram"
+                          }
+                        ],
+                        "editorType": "code",
+                        "metrics": [
+                          {
+                            "id": "1",
+                            "type": "count"
+                          }
+                        ],
+                        "preserveQuery": false,
+                        "query": "FROM security-events\n| STATS event_count = COUNT(*) BY event_type\n| SORT event_count DESC",
+                        "queryType": "esql",
+                        "timeField": "@timestamp"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "piechart",
+            "version": "13.2.3",
+            "spec": {
+              "options": {
+                "legend": {
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "pieType": "pie",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "sort": "desc",
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic",
+                    "fixedColor": "#73BF69"
+                  },
+                  "custom": {
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "Process Investigation",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "elasticsearch",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "bg10tjcobatq8c"
+                      },
+                      "spec": {
+                        "alias": "",
+                        "bucketAggs": [],
+                        "editorType": "code",
+                        "metrics": [
+                          {
+                            "id": "1",
+                            "settings": {
+                              "size": "500"
+                            },
+                            "type": "raw_data"
+                          }
+                        ],
+                        "preserveQuery": false,
+                        "query": "FROM security-events\n| KEEP @timestamp, host, process_name, event_type, severity, message\n| SORT @timestamp DESC\n| LIMIT 10",
+                        "queryType": "esql",
+                        "timeField": "@timestamp"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.2.3",
+            "spec": {
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Suspicious Process Monitoring",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "elasticsearch",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "bg10tjcobatq8c"
+                      },
+                      "spec": {
+                        "alias": "",
+                        "bucketAggs": [],
+                        "editorType": "code",
+                        "metrics": [
+                          {
+                            "id": "1",
+                            "settings": {
+                              "size": "500"
+                            },
+                            "type": "raw_data"
+                          }
+                        ],
+                        "preserveQuery": false,
+                        "query": "FROM security-events\n| WHERE severity == \"high\" OR process_name == \"suspicious-test-process\"\n| KEEP @timestamp, host, process_name, severity, event_type, message\n| SORT @timestamp DESC\n| LIMIT 20",
+                        "queryType": "esql",
+                        "timeField": "@timestamp"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.2.3",
+            "spec": {
+              "options": {
+                "cellHeight": "sm",
+                "showHeader": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "type": "auto"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
       }
     },
     "layout": {
@@ -577,6 +1479,110 @@
                 "name": "panel-4"
               }
             }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 16,
+              "width": 12,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-5"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 12,
+              "y": 16,
+              "width": 12,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-6"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 24,
+              "width": 12,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-7"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 12,
+              "y": 24,
+              "width": 12,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-8"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 32,
+              "width": 12,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-9"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 12,
+              "y": 32,
+              "width": 12,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-10"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 0,
+              "y": 40,
+              "width": 12,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-11"
+              }
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "x": 12,
+              "y": 40,
+              "width": 12,
+              "height": 8,
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-12"
+              }
+            }
           }
         ]
       }
@@ -587,7 +1593,7 @@
     "tags": [],
     "timeSettings": {
       "timezone": "browser",
-      "from": "now-24h",
+      "from": "now-30d",
       "to": "now",
       "autoRefresh": "",
       "autoRefreshIntervals": [
