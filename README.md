@@ -15,7 +15,7 @@ Developed as part of the Cybersecurity Internship at **Zaalima Development Pvt. 
 
 ## 1. Project Overview
 
-Modern Linux environments continuously generate system-level events involving process execution, file operations, and network activities. Identifying suspicious behaviour within this large volume of telemetry can be challenging without an integrated security monitoring solution.
+Modern Linux environments are continuously generate system-level events involving process execution, file operations, and network activities. Identifying suspicious behaviour within this large volume of telemetry can be challenging without an integrated security monitoring solution.
 
 The **eBPF-Powered Autonomous Threat Hunting SOC** project addresses this challenge by developing a modular Security Operations Centre (SOC) framework that collects system telemetry, processes security events, detects suspicious activities, enriches detections with MITRE ATT&CK context, and provides centralised security monitoring.
 
