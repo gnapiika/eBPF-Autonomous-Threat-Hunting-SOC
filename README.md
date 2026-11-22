@@ -2,7 +2,7 @@
 
 **An integrated Linux security monitoring and threat detection framework powered by eBPF-based telemetry, Apache Kafka, MITRE ATT&CK, Elasticsearch, Grafana, and SOAR workflows.**
 
-Developed as part of the Cybersecurity Internship at **Zaalima Development Pvt. Ltd.**
+This is developed as part of the Cybersecurity Internship at **Zaalima Development Pvt. Ltd.**
 
 [![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
 [![Linux](https://img.shields.io/badge/Platform-Linux%20%7C%20Ubuntu-orange?logo=linux)](https://ubuntu.com/)
