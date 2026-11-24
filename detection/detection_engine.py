@@ -5,8 +5,14 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from detection.event_schema import SecurityEvent
-from detection.mitre.attack_mapping import get_attack_mapping
+from detection.event_schema import (
+    SCHEMA_VERSION,
+    SOC_PRODUCER,
+    SecurityEvent,
+    normalize_severity,
+    normalize_utc_timestamp,
+)
+from detection.mitre.attack_mapping import canonical_mitre, get_attack_mapping
 from detection.correlation.correlation_engine import CorrelationEngine
 
 
@@ -27,22 +33,65 @@ class DetectionAlert:
     mitre_techniques: List[str] = field(default_factory=list)
     evidence: Dict[str, Any] = field(default_factory=dict)
     alert_id: str = field(default_factory=lambda: str(uuid4()))
+    timestamp_source: Optional[str] = None
+    mitre: Dict[str, Any] = field(
+        default_factory=lambda: {"tactics": [], "techniques": []}
+    )
+    producer: str = SOC_PRODUCER
+    synthetic: bool = False
+
+    def __post_init__(self) -> None:
+        timestamp_is_source = self.timestamp is not None
+        self.timestamp = normalize_utc_timestamp(self.timestamp)
+        self.severity = normalize_severity(self.severity)
+        if self.timestamp_source is None:
+            self.timestamp_source = (
+                "event" if timestamp_is_source else "ingest"
+            )
+        self.mitre = canonical_mitre(
+            self.mitre_tactics,
+            self.mitre_techniques,
+            self.mitre,
+        )
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert the alert into a JSON-compatible dictionary."""
+        """Serialize the canonical alert and its compatibility aliases."""
+        timestamp = normalize_utc_timestamp(self.timestamp)
+        process = dict(self.evidence.get("process") or {})
+        mitre = canonical_mitre(
+            self.mitre_tactics,
+            self.mitre_techniques,
+            self.mitre,
+        )
         return {
+            "schema_version": SCHEMA_VERSION,
+            "producer": self.producer,
+            "synthetic": self.synthetic,
             "alert_id": self.alert_id,
             "rule_id": self.rule_id,
             "rule_name": self.rule_name,
-            "severity": self.severity,
+            "severity": normalize_severity(self.severity),
             "description": self.description,
             "event_id": self.event_id,
             "event_type": self.event_type,
             "source": self.source,
             "host": self.host,
-            "timestamp": self.timestamp,
-            "mitre_tactics": self.mitre_tactics,
-            "mitre_techniques": self.mitre_techniques,
+            "@timestamp": timestamp,
+            "timestamp": timestamp,
+            "timestamp_source": self.timestamp_source,
+            "process": process,
+            "process_name": process.get("name"),
+            "mitre": mitre,
+            "mitre_tactics": self.mitre_tactics
+            or [
+                entry.get("id") or entry.get("name")
+                for entry in mitre["tactics"]
+            ],
+            "mitre_techniques": self.mitre_techniques
+            or [
+                entry.get("id") or entry.get("name")
+                for entry in mitre["techniques"]
+            ],
             "evidence": self.evidence,
         }
 
@@ -185,6 +234,12 @@ class DetectionEngine:
                     source=anchor_event.source,
                     host=finding["host"],
                     timestamp=anchor_event.timestamp,
+                    timestamp_source=anchor_event.timestamp_source,
+                    synthetic=any(
+                        events_by_id[event_id].synthetic
+                        for event_id in correlated_ids
+                        if event_id in events_by_id
+                    ),
                     mitre_tactics=list(finding.get("mitre_tactics", [])),
                     mitre_techniques=list(
                         finding.get("mitre_techniques", [])
@@ -290,6 +345,12 @@ class DetectionEngine:
                 "priority": event.metadata.get("priority"),
                 "output": event.metadata.get("output"),
             }
+        if event.file.path or event.file.operation:
+            evidence["file"] = {
+                "path": event.file.path,
+                "operation": event.file.operation,
+                "hash_sha256": event.file.hash_sha256,
+            }
 
         mapping = get_attack_mapping(rule["id"])
 
@@ -303,6 +364,8 @@ class DetectionEngine:
             source=event.source,
             host=event.host,
             timestamp=event.timestamp,
+            timestamp_source=event.timestamp_source,
+            synthetic=event.synthetic,
             mitre_tactics=list(mapping.get("tactics", [])),
             mitre_techniques=[
                 technique["id"]

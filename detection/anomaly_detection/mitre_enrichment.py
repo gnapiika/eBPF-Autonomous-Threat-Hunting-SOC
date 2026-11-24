@@ -3,6 +3,8 @@
 
 from typing import Any, Dict
 
+from detection.mitre.attack_mapping import canonical_mitre
+
 
 ANOMALY_ATTACK_MAPPINGS = {
     "ANOM-001": {
@@ -27,10 +29,19 @@ def enrich_anomaly_finding(finding: Dict[str, Any]) -> Dict[str, Any]:
         enriched.setdefault("mitre_tactics", [])
         enriched.setdefault("mitre_techniques", [])
         enriched.setdefault("technique_names", [])
+        enriched["mitre"] = canonical_mitre(
+            enriched["mitre_tactics"],
+            enriched["mitre_techniques"],
+            enriched.get("mitre"),
+        )
         return enriched
 
     enriched["mitre_tactics"] = list(mapping["mitre_tactics"])
     enriched["mitre_techniques"] = list(mapping["mitre_techniques"])
+    enriched["mitre"] = canonical_mitre(
+        enriched["mitre_tactics"],
+        enriched["mitre_techniques"],
+    )
     enriched["technique_names"] = list(mapping["technique_names"])
     enriched["mitre_mapping_note"] = mapping["note"]
 

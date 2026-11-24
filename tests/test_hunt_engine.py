@@ -91,6 +91,20 @@ def test_hunt_by_time_range(hunter):
     assert results[0].event_id == "EVT-002"
 
 
+def test_hunt_by_time_range_converts_offsets_to_utc():
+    hunter = ThreatHunter(
+        [make_event(timestamp="2026-10-10T12:00:00+02:00")]
+    )
+
+    results = hunter.hunt(
+        start_time="2026-10-10T09:30:00Z",
+        end_time="2026-10-10T10:30:00Z",
+    )
+
+    assert len(results) == 1
+    assert results[0].timestamp == "2026-10-10T10:00:00.000Z"
+
+
 def test_hunt_combines_filters(hunter):
     results = hunter.hunt(
         event_type="process_execution",

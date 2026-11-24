@@ -1,5 +1,7 @@
 # Week 3: Complete and verify n8n alert responses
 
+For the current import file and reusable medium/high commands, see the [final n8n demonstration](final-demo.md#3-show-the-n8n-branches). The examples and verification below describe the original weekly implementation.
+
 Week 3 adds an explicit status to each simulated response, rechecks alert
 routing, and documents the Python/n8n integration and proposed team contract.
 The response remains simulated: it does not contain or execute containment

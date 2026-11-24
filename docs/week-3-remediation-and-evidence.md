@@ -36,6 +36,25 @@ IP. These are plans only: every package reports `response_status: simulated`,
 `execution_performed: false`. Invalid or missing targets do not produce an
 action. This makes the flow safe to test without changing the host or network.
 
+## Kafka detection to SOAR handoff
+
+When `N8N_WEBHOOK_URL` is configured, the Kafka detection consumer writes each
+alert to `telemetry/detection_alerts.jsonl` and forwards the same alert through
+`DetectionSoarIntegration`. The webhook keeps the existing `source` and
+`alert` fields and adds a `response` object containing the existing evidence
+bundle and simulated response plan. If the webhook is not configured or a
+request fails, the consumer logs the failure and retains the alert in JSONL.
+Failed deliveries are not automatically retried after the Kafka offset is
+committed; replay or manual forwarding from the saved alert is required.
+
+Successful deliveries are recorded in
+`telemetry/forwarded_alerts.sqlite3` by Kafka topic, partition, offset, and
+detection rule. Override the database path with `SOC_FORWARDED_ALERTS_DB`.
+This prevents normal Kafka replays from sending the same record/rule twice.
+The HTTP request and local database cannot form a distributed transaction, so
+a process interruption between webhook acceptance and ledger persistence can
+still result in a duplicate delivery.
+
 ## Local usage
 
 ```python

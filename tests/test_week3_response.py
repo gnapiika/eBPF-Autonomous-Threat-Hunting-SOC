@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from detection.detection_engine import DetectionAlert, DetectionEngine
@@ -81,9 +83,14 @@ def test_collector_captures_requested_evidence_and_process_tree():
     bundle = ForensicEvidenceCollector().collect(events, alert=make_alert())
 
     assert bundle["host"] == "lab-host"
+    collected_at = datetime.fromisoformat(
+        bundle["collected_at"].replace("Z", "+00:00")
+    )
+    assert collected_at.utcoffset().total_seconds() == 0
     assert bundle["alert"]["alert_id"] == "alert-123"
     assert bundle["event_ids"] == ["event-parent", "event-child"]
     assert bundle["timestamps"][1]["timestamp"] == events[1].timestamp
+    assert bundle["timestamps"][1]["@timestamp"] == events[1].timestamp
     assert bundle["process_information"][1]["pid"] == 123
     assert bundle["network_connections"][0]["destination_ip"] == "198.51.100.20"
     assert bundle["file_information"][0]["hash_sha256"] == "a" * 64
@@ -107,6 +114,7 @@ def test_response_workflow_plans_but_never_executes_containment():
     assert plan["mode"] == "dry_run"
     assert plan["approval_required"] is True
     assert plan["execution_performed"] is False
+    assert all(action["status"] == "simulated" for action in plan["actions"])
     assert [action["action"] for action in plan["actions"]] == [
         "process_isolation",
         "network_containment",
@@ -174,6 +182,7 @@ def test_collector_reports_missing_telemetry_without_fabricating_values():
     assert bundle["file_information"] == []
     assert bundle["relevant_logs"] == []
     assert bundle["timestamps"][0]["timestamp"] == event.timestamp
+    assert bundle["timestamps"][0]["@timestamp"] == event.timestamp
     assert bundle["coverage"] == {
         "event_count": 1,
         "process_event_count": 0,

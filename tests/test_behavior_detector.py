@@ -27,6 +27,9 @@ def test_detects_suspicious_command_pattern():
     assert findings[0]["rule_id"] == "BEHAV-001"
     assert findings[0]["severity"] == "medium"
     assert "curl " in findings[0]["indicators"]
+    assert findings[0]["mitre"]["tactics"] == [
+        {"id": "TA0002", "name": "Execution"}
+    ]
 
 
 def test_ignores_normal_command():

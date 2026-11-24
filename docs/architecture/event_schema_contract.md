@@ -1,95 +1,227 @@
+# Canonical Event, Alert, and Response Contract
 
-# Security Event Schema Contract
+**Schema version:** `1.0`
 
-**Owner:** Member 2 — Detection, MITRE ATT&CK and Threat Hunting
+This contract is the shared boundary for telemetry normalization, detection,
+SOAR, forensic evidence, and dashboard storage. Raw collector payloads remain
+source-specific; the normalizer converts them to the canonical event schema.
 
-## 1. Purpose
+## 1. Canonical event
 
-This contract defines the common event format used by telemetry
-collection, normalization, detection, response, and dashboard components.
+The canonical event is serialized with these fields:
 
-## 2. Event lifecycle
-
-Raw telemetry -> Normalizer -> SecurityEvent -> Detection -> Alert
-
-Kafka is the planned transport layer. The exact integration method
-must be confirmed with Member 1.
-
-## 3. Common fields
-
-| Field | Type | Requirement | Description |
+| Field | Type | Requirement | Meaning |
 |---|---|---|---|
-| event_id | string | Required | Unique event identifier |
-| event_type | string | Required | Normalized activity category |
-| source | string | Required | Original collector |
-| host | string | Required | Host that generated the event |
-| timestamp | string | Required | ISO 8601 timestamp |
-| process | object | Optional | Process information |
-| user | object | Optional | User information |
-| network | object | Optional | Network/socket details |
-| file | object | Optional | File activity details |
-| severity | string | Optional | Severity assigned by detection |
-| tags | array | Optional | Event labels |
-| raw_event | object | Optional | Original telemetry payload |
-| mitre_tactics | array | Optional | Associated ATT&CK tactic IDs |
-| mitre_techniques | array | Optional | Associated ATT&CK technique IDs |
-| metadata | object | Optional | Additional context |
+| `schema_version` | string | Required | Contract version, currently `1.0` |
+| `producer` | string | Emitted | Canonical record producer |
+| `synthetic` | boolean | Emitted | True for explicitly marked synthetic data |
+| `event_id` | string | Required | Stable event identifier |
+| `event_type` | string | Required | Normalized activity, such as `process_execution` |
+| `source` | string | Required | Telemetry collector, such as `falco` or `tetragon` |
+| `host` | string | Required | Host that generated the event |
+| `@timestamp` | string | Required | ISO 8601 UTC timestamp used by Elasticsearch |
+| `timestamp` | string | Required | Backward-compatible alias of `@timestamp` |
+| `timestamp_source` | string | Required | `event` or `ingest`, identifying timestamp provenance |
+| `severity` | string | Required | Lowercase event severity enum |
+| `process` | object | Optional | Canonical nested process information |
+| `process_name` | string | Optional | Backward-compatible alias of `process.name` |
+| `user` | object | Optional | User identity information |
+| `network` | object | Optional | Network endpoints, ports, and protocol |
+| `file` | object | Optional | File path, operation, and hash |
+| `mitre` | object | Required | Canonical ATT&CK tactics and techniques |
+| `mitre_tactics` | array | Deprecated alias | Existing tactic values retained during migration |
+| `mitre_techniques` | array | Deprecated alias | Existing technique values retained during migration |
+| `tags` | array | Optional | Event labels |
+| `metadata` | object | Optional | Source-specific normalized context |
+| `raw_event` | object | Optional | Original collector payload |
 
-The implementation's actual dataclass definitions are authoritative.
-If this document and the implementation differ, update this contract
-after reviewing the change with the team.
+`@timestamp` and `timestamp` must contain the same UTC value, formatted with a
+`Z` suffix. A valid source timestamp is converted to UTC and sets
+`timestamp_source` to `event`. If the source timestamp is absent, `@timestamp`
+is the UTC ingestion time and `timestamp_source` is `ingest`; the original raw
+payload remains available for investigation. Invalid timestamps must be
+reported rather than silently treated as valid event time.
 
-## 4. Normalized event types
+The accepted severity values are `critical`, `high`, `medium`, `low`, and
+`info`. Source-specific values such as Falco `Warning` or `Notice` are mapped
+to this enum before serialization.
 
-Use consistent names where the source provides sufficient evidence:
+`process` is canonical. It uses `pid`, `ppid`, `name`, `executable`,
+`command_line`, `parent_name`, and `parent_executable` where available.
+`process_name` is an additive dashboard compatibility alias and must equal
+`process.name`.
 
-- process_execution
-- file_activity
-- network_connection
-- authentication
+The canonical ATT&CK representation uses objects so IDs and display names
+cannot be confused:
 
-Additional event types can be introduced as required.
+```json
+{
+  "tactics": [{"id": "TA0002", "name": "Execution"}],
+  "techniques": [
+    {"id": "T1059", "name": "Command and Scripting Interpreter"}
+  ]
+}
+```
 
-## 5. Timestamp rules
+The existing top-level `mitre_tactics` and `mitre_techniques` arrays remain
+temporarily for compatibility. Their existing values are not authoritative:
+historical producers have emitted both tactic names and IDs. New consumers
+must use the canonical `mitre` object.
 
-- Use ISO 8601 timestamps.
-- Preserve timezone information whenever available.
-- Normalize timestamps consistently.
-- Do not silently invent an event time if the source timestamp is missing.
+Example event:
 
-## 6. MITRE ATT&CK mapping rules
+```json
+{
+  "schema_version": "1.0",
+  "event_id": "event-123",
+  "event_type": "process_execution",
+  "source": "falco",
+  "host": "lab-host",
+  "@timestamp": "2026-11-13T14:00:00.000Z",
+  "timestamp": "2026-11-13T14:00:00.000Z",
+  "timestamp_source": "event",
+  "severity": "low",
+  "process": {
+    "pid": 424242,
+    "name": "synthetic-lab-process",
+    "command_line": "synthetic --demo"
+  },
+  "process_name": "synthetic-lab-process",
+  "user": {"username": "lab-user"},
+  "network": {},
+  "file": {},
+  "mitre": {"tactics": [], "techniques": []},
+  "mitre_tactics": [],
+  "mitre_techniques": [],
+  "tags": ["falco"],
+  "metadata": {},
+  "raw_event": {}
+}
+```
 
-- Map based on observed behavior and supporting evidence.
-- Preserve the event even when no technique can be confidently assigned.
-- Do not treat an unusual port or high event volume alone as proof of an attack.
-- Keep detection findings separate from confirmed incident conclusions.
+## 2. Canonical alert
 
-## 7. Integration responsibilities
+An alert represents a detection, not a confirmed incident. It uses the same
+identity, source, host, timestamp, severity, process, and ATT&CK conventions as
+an event, with these alert-specific fields:
 
-### Member 1 — Telemetry
+| Field | Type | Requirement | Meaning |
+|---|---|---|---|
+| `schema_version` | string | Required | Contract version, currently `1.0` |
+| `producer` | string | Emitted | Canonical record producer |
+| `synthetic` | boolean | Emitted | True for explicitly marked synthetic data |
+| `alert_id` | string | Required | Unique detection alert identifier |
+| `rule_id` | string | Required | Detection or correlation rule identifier |
+| `rule_name` | string | Required | Human-readable rule name |
+| `description` | string | Required | Detection explanation |
+| `event_id` | string | Required | Event that anchored the alert |
+| `source` | string | Required | Telemetry collector that produced the event |
+| `host` | string | Required | Host associated with the event |
+| `@timestamp` | string | Required | ISO 8601 UTC event timestamp |
+| `timestamp` | string | Required | Backward-compatible alias of `@timestamp` |
+| `timestamp_source` | string | Required | `event` or `ingest` provenance |
+| `severity` | string | Required | Lowercase shared severity enum |
+| `process` | object | Optional | Canonical nested process information |
+| `process_name` | string | Optional | Backward-compatible alias of `process.name` |
+| `mitre` | object | Required | Canonical ATT&CK tactics and techniques |
+| `evidence` | object | Required | Existing rule evidence, retained without restructuring |
 
-Provide raw event examples, source fields, timestamp formats, and Kafka
-transport details.
+Alert `severity` is the detection-rule severity; event `severity` is source or
+normalized event severity. Both use the same lowercase enum, but they must not
+be conflated. `process` is the canonical process view for consumers such as the
+dashboard; existing `evidence.process`, `evidence.network`, and
+`evidence.falco` fields remain unchanged.
 
-### Member 2 — Detection
+The existing `mitre_tactics` and `mitre_techniques` alert arrays are retained
+as deprecated aliases. The canonical `mitre` object is authoritative.
 
-Normalize events, maintain the schema, validate mappings, and provide
-detection alerts with evidence.
+## 3. Webhook envelope and response package
 
-### Member 3 — SOAR
+The webhook retains the existing envelope and adds `producer` as the
+unambiguous application identifier:
 
-Consume the agreed alert structure and test a safe webhook workflow.
+```json
+{
+  "schema_version": "1.0",
+  "producer": "ebpf-autonomous-threat-hunting-soc",
+  "source": "ebpf-autonomous-threat-hunting-soc",
+  "alert": {},
+  "response": {
+    "alert_id": "same alert ID",
+    "response_status": "simulated",
+    "evidence": {},
+    "response_plan": {
+      "mode": "dry_run",
+      "approval_required": true,
+      "execution_performed": false,
+      "actions": []
+    }
+  }
+}
+```
 
-### Member 4 — Dashboard
+Top-level `source` is retained as a backward-compatible alias for `producer`.
+`alert.source` always identifies the telemetry collector.
 
-Consume agreed event and alert fields for visualizations.
+The response package contains `alert_id`, `response_status`, `evidence`, and
+`response_plan`. The plan contains `mode`, `approval_required`,
+`execution_performed`, and `actions`; actions retain their target and
+simulation status.
 
-## 8. Week 1 acceptance criteria
+The response package preserves the existing forensic evidence structure:
+`evidence_id`, collection metadata, host, alert, event IDs, timestamps, process
+information/tree, network connections, file information, relevant logs, raw
+events, and coverage counts. `response_status` is `simulated`; each planned
+action is marked `simulated`; `mode` is `dry_run`;
+`approval_required` is `true`; and `execution_performed` is `false`.
+This contract does not authorize or describe real containment.
 
-- [ ] Schema implementation reviewed.
-- [ ] At least one representative raw event obtained.
-- [ ] Normalizer tested with the agreed event format.
-- [ ] Timestamp and event-type handling verified.
-- [ ] MITRE mapping behavior tested.
-- [ ] Contract shared with the other members.
-- [ ] Integration dependencies documented.
+## 4. Elasticsearch and dashboard contract
+
+Use separate indices:
+
+- `security-events` stores canonical event documents.
+- `security-alerts` stores canonical alert documents and the associated
+  response package when available.
+
+Both use `@timestamp` as the Elasticsearch date field. The `security-events`
+projection retains `event_type`, `host`, `severity`, and `source` as
+top-level fields and exposes `process_name` for the current dashboard.
+The `security-alerts` projection exposes `alert_id`, rule name, severity,
+source, host, `@timestamp`, process fields, canonical `mitre`, response status,
+and evidence.
+
+The Elasticsearch alert document may additionally expose
+`response_status` and `evidence_available` at the top level for dashboard
+queries while retaining the complete `response` package. The separate
+`external_workflow` object records webhook delivery metadata, not a workflow
+result. In particular, a successful n8n HTTP request does not mean an n8n
+workflow completed; `result_received` remains `false` until an actual result is
+received.
+
+The integrated Grafana dashboard configuration reads `security-events` and
+`security-alerts` and defines event, alert, MITRE, response, and evidence
+panels. This is a local configuration contract, not a claim that Elasticsearch
+ingestion or Grafana queries have been validated against live services.
+
+## 5. Migration and compatibility
+
+- Keep `timestamp`, `process_name`, and the existing MITRE arrays as additive
+  compatibility aliases; canonical fields take precedence when both forms
+  are supplied.
+- Keep vendor-native Kafka messages and `raw_event`; normalize at the
+  detection boundary.
+- Keep the webhook `source` and `alert` fields; add `producer` and `response`.
+- Keep the forensic evidence field names and structure.
+- Update readers to the canonical fields before removing any deprecated alias.
+
+## 6. Ownership
+
+- **Member 1:** publish raw source events and preserve collector provenance.
+- **Member 2:** normalize events, generate canonical alerts, and enrich ATT&CK
+  metadata.
+- **Member 3:** forward canonical alerts and safe response/evidence packages.
+- **Member 4:** consume the event and alert indices and render their documented
+  fields.
+
+The Kafka consumer appends the alert fields, a `response` package, and a Kafka `message_key` to its local JSONL. The webhook keeps the envelope above and the replay command omits the local transport key. Existing JSONL readers can continue reading the top-level alert fields.

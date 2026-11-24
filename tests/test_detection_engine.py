@@ -132,3 +132,37 @@ def test_alert_serializes_to_dictionary():
     assert result["rule_id"] == "DET-001"
     assert result["severity"] == "medium"
     assert result["alert_id"]
+    assert result["@timestamp"] == result["timestamp"] == alert.timestamp
+    assert result["timestamp_source"] == "ingest"
+    assert result["process"]["name"] == result["process_name"] == "bash"
+    assert result["mitre"] == {
+        "tactics": [{"id": "TA0002", "name": "Execution"}],
+        "techniques": [
+            {
+                "id": "T1059",
+                "name": "Command and Scripting Interpreter",
+            }
+        ],
+    }
+
+
+def test_alert_normalizes_timestamp_and_severity_aliases():
+    event = SecurityEvent(
+        event_type="process_execution",
+        source="tetragon",
+        host="test-server",
+        timestamp="2026-03-01T10:00:00+02:00",
+        process=ProcessInfo(
+            name="bash",
+            command_line="bash -c whoami",
+        ),
+    )
+    alert = DetectionEngine().evaluate(event)[0]
+    alert.severity = "Warning"
+
+    result = alert.to_dict()
+
+    assert result["@timestamp"] == "2026-03-01T08:00:00.000Z"
+    assert result["timestamp"] == result["@timestamp"]
+    assert result["timestamp_source"] == "event"
+    assert result["severity"] == "medium"

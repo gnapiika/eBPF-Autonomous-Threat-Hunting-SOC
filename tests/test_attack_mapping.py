@@ -10,6 +10,15 @@ def test_known_rule_returns_correct_mapping():
     assert mapping["name"] == "Suspicious Shell Execution"
     assert "Execution" in mapping["tactics"]
     assert mapping["techniques"][0]["id"] == "T1059"
+    assert mapping["mitre"]["tactics"] == [
+        {"id": "TA0002", "name": "Execution"}
+    ]
+    assert mapping["mitre"]["techniques"] == [
+        {
+            "id": "T1059",
+            "name": "Command and Scripting Interpreter",
+        }
+    ]
 
 
 def test_unknown_rule_returns_empty_mapping():
@@ -18,6 +27,7 @@ def test_unknown_rule_returns_empty_mapping():
     assert mapping["name"] == "Unknown Detection Rule"
     assert mapping["tactics"] == []
     assert mapping["techniques"] == []
+    assert mapping["mitre"] == {"tactics": [], "techniques": []}
 
 
 def test_enrich_alert_preserves_original_fields():

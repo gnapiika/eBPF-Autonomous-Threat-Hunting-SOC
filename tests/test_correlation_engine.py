@@ -39,6 +39,9 @@ def test_detects_repeated_failures_followed_by_success():
     assert findings[0]["username"] == "admin"
     assert findings[0]["source_ip"] == "192.168.1.50"
     assert len(findings[0]["event_ids"]) == 4
+    assert findings[0]["mitre"]["tactics"] == [
+        {"id": "TA0006", "name": "Credential Access"}
+    ]
 
 
 def test_ignores_success_without_enough_failures():

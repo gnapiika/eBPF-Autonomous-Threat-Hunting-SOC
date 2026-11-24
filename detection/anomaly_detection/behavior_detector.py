@@ -4,6 +4,7 @@
 from typing import Any, Dict, List
 
 from detection.event_schema import SecurityEvent
+from detection.mitre.attack_mapping import canonical_mitre
 
 
 SUSPICIOUS_COMMAND_INDICATORS = (
@@ -61,6 +62,10 @@ class BehaviorDetector:
                     "indicators": indicators,
                     "mitre_tactics": ["TA0002"],
                     "mitre_techniques": ["T1059"],
+                    "mitre": canonical_mitre(
+                        ["TA0002"],
+                        ["T1059"],
+                    ),
                 }
             )
 

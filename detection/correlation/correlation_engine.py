@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from detection.event_schema import SecurityEvent
+from detection.mitre.attack_mapping import canonical_mitre
 
 
 class CorrelationEngine:
@@ -94,6 +95,10 @@ class CorrelationEngine:
                     ] + [success_event.event_id],
                     "mitre_tactics": ["Credential Access"],
                     "mitre_techniques": ["T1110"],
+                    "mitre": canonical_mitre(
+                        ["Credential Access"],
+                        ["T1110"],
+                    ),
                 })
 
         return findings

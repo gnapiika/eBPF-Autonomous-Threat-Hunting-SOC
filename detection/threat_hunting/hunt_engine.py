@@ -1,6 +1,6 @@
 """In-memory threat hunting utilities for normalized security events."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from detection.event_schema import SecurityEvent
@@ -28,8 +28,8 @@ class ThreatHunter:
     ) -> List[SecurityEvent]:
         """Return events matching all supplied filters.
 
-        Timestamps should be ISO-8601 strings. For reliable time
-        comparisons, timestamps should use the same timezone format.
+        Timestamps should be ISO-8601 strings. Naive timestamps are
+        interpreted as UTC and aware timestamps are compared in UTC.
         """
         start = self._parse_time(start_time)
         end = self._parse_time(end_time)
@@ -80,7 +80,9 @@ class ThreatHunter:
                 f"Invalid ISO-8601 timestamp: {value}"
             ) from exc
 
-        return parsed
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
 
     @staticmethod
     def _searchable_text(event: SecurityEvent) -> str:

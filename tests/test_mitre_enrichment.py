@@ -15,6 +15,15 @@ def test_enriches_known_anomaly_rule():
 
     assert result["mitre_tactics"] == ["TA0002"]
     assert result["mitre_techniques"] == ["T1059"]
+    assert result["mitre"]["tactics"] == [
+        {"id": "TA0002", "name": "Execution"}
+    ]
+    assert result["mitre"]["techniques"] == [
+        {
+            "id": "T1059",
+            "name": "Command and Scripting Interpreter",
+        }
+    ]
     assert "mitre_mapping_note" in result
     assert "mitre_tactics" not in finding
 
@@ -24,6 +33,7 @@ def test_unknown_rule_receives_empty_mitre_metadata():
 
     assert result["mitre_tactics"] == []
     assert result["mitre_techniques"] == []
+    assert result["mitre"] == {"tactics": [], "techniques": []}
     assert result["technique_names"] == []
 
 

@@ -1,0 +1,154 @@
+{
+  "name": "SOC Alert Response (Simulated)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "soc-alerts-demo",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "824c5953-5d09-5c69-8737-5be613766c50",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        120
+      ],
+      "webhookId": "66eec6e7-69dd-50ec-8c90-0b7cdd24739a"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9c86b148-c315-5cce-892e-540a290b3e82",
+              "leftValue": "={{ $json.body.alert.severity }}",
+              "rightValue": "high",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "id": "d07022a9-4cb9-5f54-b316-9e48c841f801",
+      "name": "Is high severity?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2bf2f34a-6d9f-507b-bbe4-750f2b346c73",
+              "name": "response_action",
+              "value": "high_severity_review",
+              "type": "string"
+            },
+            {
+              "id": "e7ccde59-20de-5d5b-a2fe-81c2d6ff0d7d",
+              "name": "response_status",
+              "value": "simulated",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {},
+        "include": "all"
+      },
+      "id": "22f63e9f-36f6-5c98-bc51-1727a0f929c3",
+      "name": "High severity review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0667cf91-87e4-5d39-b8fa-d2e4193f12a0",
+              "name": "response_action",
+              "value": "manual_review",
+              "type": "string"
+            },
+            {
+              "id": "1f69eb68-6323-5031-8960-f6e4c7dd31d4",
+              "name": "response_status",
+              "value": "simulated",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {},
+        "include": "all"
+      },
+      "id": "52df94b7-5ea9-5973-9495-425f6b72941e",
+      "name": "Manual review",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is high severity?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is high severity?": {
+      "main": [
+        [
+          {
+            "node": "High severity review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Manual review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

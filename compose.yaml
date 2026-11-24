@@ -1,0 +1,54 @@
+name: soc-lab
+
+services:
+  kafka:
+    extends:
+      file: telemetry/kafka/docker-compose.yml
+      service: kafka
+    container_name: soc-lab-kafka
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.9
+    ports:
+      - "127.0.0.1:9200:9200"
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      node.store.allow_mmap: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s"]
+      interval: 10s
+      timeout: 8s
+      retries: 12
+      start_period: 45s
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana-enterprise:13.2.3
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env or the shell}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./dashboard/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./dashboard/grafana/soc_dashboard.json:/var/lib/grafana/dashboards/soc_dashboard.json:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  kafka_data:
+  elasticsearch_data:
+  grafana_data:

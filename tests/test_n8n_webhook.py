@@ -40,9 +40,12 @@ def test_sends_alert_as_json_post_to_n8n():
     assert request.full_url == "http://localhost:5678/webhook/soc-alerts"
     assert request.method == "POST"
     assert request.get_header("Content-type") == "application/json"
+    assert payload["schema_version"] == "1.0"
+    assert payload["producer"] == "ebpf-autonomous-threat-hunting-soc"
     assert payload["source"] == "ebpf-autonomous-threat-hunting-soc"
     assert payload["alert"]["rule_id"] == "DET-001"
     assert payload["alert"]["host"] == "test-server"
+    assert payload["alert"]["mitre"]["techniques"][0]["id"] == "T1059"
     assert urlopen.call_args.kwargs["timeout"] == 8
 
 

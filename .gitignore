@@ -14,6 +14,7 @@ ENV/
 # Environment variables
 .env
 .env.*
+.envrc
 !.env.example
 
 # IDE
@@ -30,6 +31,8 @@ logs/
 
 # Test / coverage
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 coverage.xml
@@ -50,14 +53,25 @@ data/
 # Ignore JSON files by default, but track approved project samples
 *.json
 !scripts/sample_telemetry.json
+!dashboard/grafana/soc_dashboard.json
+!soar/workflows/soc_alert_response.json
 
 # Generated runtime output
-telemetry/detection_alerts.jsonl
+*.jsonl
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
 
 # Secrets / credentials
 *.pem
 *.key
+*.p12
+*.pfx
 credentials.json
+secrets/
 
 # Elasticsearch
 elasticsearch-data/

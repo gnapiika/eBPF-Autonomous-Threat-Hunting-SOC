@@ -44,6 +44,9 @@ def test_tetragon_process_event(normalizer):
     assert event.process.executable == "/bin/bash"
     assert event.process.parent_name == "sshd"
     assert event.user.username == "analyst"
+    assert event.timestamp == "2026-10-08T15:30:00.000Z"
+    assert event.timestamp_source == "event"
+    assert event.severity == "info"
 
 
 def test_falco_process_event(normalizer):
@@ -82,6 +85,7 @@ def test_falco_process_event(normalizer):
     assert event.network.destination_ip == "10.0.0.20"
     assert event.network.destination_port == 443
     assert event.user.username == "analyst"
+    assert event.severity == "medium"
 
 
 def test_ebpf_exec_event(normalizer):

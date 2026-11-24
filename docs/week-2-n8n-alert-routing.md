@@ -1,5 +1,7 @@
 # Week 2: Route security alerts in n8n
 
+For the current import file and reusable medium/high commands, see the [final n8n demonstration](final-demo.md#3-show-the-n8n-branches). The examples and verification below describe the original weekly implementation.
+
 This guide explains what was built and tested in Week 2, what the results
 mean, and how to repeat the tests safely.
 

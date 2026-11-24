@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: SOC Elasticsearch
+    uid: bg10tjcobatq8c
+    type: elasticsearch
+    access: proxy
+    url: http://elasticsearch:9200
+    editable: false
+    jsonData:
+      index: security-*
+      timeField: "@timestamp"

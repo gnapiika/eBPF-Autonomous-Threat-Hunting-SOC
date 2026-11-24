@@ -8,9 +8,62 @@ components.
 
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 import json
 import uuid
+
+from detection.mitre.attack_mapping import canonical_mitre
+
+
+SCHEMA_VERSION = "1.0"
+SOC_PRODUCER = "ebpf-autonomous-threat-hunting-soc"
+
+
+def normalize_utc_timestamp(
+    value: Optional[Union[str, datetime]] = None,
+) -> str:
+    """Return an ISO 8601 UTC timestamp with millisecond precision."""
+    if value is None:
+        parsed = datetime.now(timezone.utc)
+    elif isinstance(value, datetime):
+        parsed = value
+    else:
+        timestamp = str(value).strip()
+        if timestamp.endswith("Z"):
+            timestamp = timestamp[:-1] + "+00:00"
+        try:
+            parsed = datetime.fromisoformat(timestamp)
+        except ValueError as exc:
+            raise ValueError(f"invalid ISO 8601 timestamp: {value}") from exc
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return (
+        parsed.astimezone(timezone.utc)
+        .isoformat(timespec="milliseconds")
+        .replace("+00:00", "Z")
+    )
+
+
+def normalize_severity(value: Any) -> str:
+    """Normalize source severity labels to the shared lowercase enum."""
+    mappings = {
+        "emergency": "critical",
+        "alert": "critical",
+        "critical": "critical",
+        "crit": "critical",
+        "error": "high",
+        "err": "high",
+        "high": "high",
+        "warning": "medium",
+        "warn": "medium",
+        "medium": "medium",
+        "notice": "low",
+        "low": "low",
+        "info": "info",
+        "informational": "info",
+    }
+    return mappings.get(str(value).lower().strip(), "info")
 
 
 @dataclass
@@ -70,9 +123,8 @@ class SecurityEvent:
 
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    timestamp: Optional[str] = None
+    timestamp_source: Optional[str] = None
 
     process: ProcessInfo = field(default_factory=ProcessInfo)
     user: UserInfo = field(default_factory=UserInfo)
@@ -91,10 +143,52 @@ class SecurityEvent:
 
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert the security event into a dictionary."""
+    mitre: Dict[str, List[Dict[str, Optional[str]]]] = field(
+        default_factory=lambda: {"tactics": [], "techniques": []}
+    )
+    producer: str = SOC_PRODUCER
+    synthetic: bool = False
 
-        return asdict(self)
+    def __post_init__(self) -> None:
+        timestamp_is_source = self.timestamp is not None
+        self.timestamp = normalize_utc_timestamp(self.timestamp)
+        self.severity = normalize_severity(self.severity)
+        if self.timestamp_source is None:
+            self.timestamp_source = (
+                "event" if timestamp_is_source else "ingest"
+            )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize the canonical event and its compatibility aliases."""
+        event = asdict(self)
+        timestamp = normalize_utc_timestamp(self.timestamp)
+        mitre = canonical_mitre(
+            self.mitre_tactics,
+            self.mitre_techniques,
+            self.mitre,
+        )
+        event.update(
+            {
+                "schema_version": SCHEMA_VERSION,
+                "@timestamp": timestamp,
+                "timestamp": timestamp,
+                "timestamp_source": self.timestamp_source,
+                "severity": normalize_severity(self.severity),
+                "process_name": self.process.name,
+                "mitre": mitre,
+                "mitre_tactics": self.mitre_tactics
+                or [
+                    entry.get("id") or entry.get("name")
+                    for entry in mitre["tactics"]
+                ],
+                "mitre_techniques": self.mitre_techniques
+                or [
+                    entry.get("id") or entry.get("name")
+                    for entry in mitre["techniques"]
+                ],
+            }
+        )
+        return event
 
     def to_json(self) -> str:
         """Serialize the security event as JSON."""
@@ -103,19 +197,37 @@ class SecurityEvent:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SecurityEvent":
-        """Create a SecurityEvent from a dictionary."""
+        """Create a SecurityEvent from canonical or legacy serialized data."""
+        values = dict(data)
+        values.pop("schema_version", None)
+        canonical_timestamp = values.pop("@timestamp", None)
+        if canonical_timestamp is not None:
+            values["timestamp"] = canonical_timestamp
 
-        process_data = data.pop("process", {})
-        user_data = data.pop("user", {})
-        network_data = data.pop("network", {})
-        file_data = data.pop("file", {})
+        process_data = dict(values.pop("process", {}))
+        process_name = values.pop("process_name", None)
+        if process_data.get("name") is None and process_name is not None:
+            process_data["name"] = process_name
+        user_data = dict(values.pop("user", {}))
+        network_data = dict(values.pop("network", {}))
+        file_data = dict(values.pop("file", {}))
+        mitre = values.pop("mitre", {"tactics": [], "techniques": []})
+        values.setdefault(
+            "mitre_tactics",
+            [entry.get("id") for entry in mitre.get("tactics", [])],
+        )
+        values.setdefault(
+            "mitre_techniques",
+            [entry.get("id") for entry in mitre.get("techniques", [])],
+        )
 
         return cls(
             process=ProcessInfo(**process_data),
             user=UserInfo(**user_data),
             network=NetworkInfo(**network_data),
             file=FileInfo(**file_data),
-            **data,
+            mitre=mitre,
+            **values,
         )
 
 

@@ -1,11 +1,10 @@
 """Build a forensic evidence bundle from normalized security events."""
 
 from dataclasses import asdict
-from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from detection.detection_engine import DetectionAlert
-from detection.event_schema import SecurityEvent
+from detection.event_schema import SecurityEvent, normalize_utc_timestamp
 
 
 class ForensicEvidenceCollector:
@@ -59,13 +58,19 @@ class ForensicEvidenceCollector:
         process_tree = self._build_process_tree(events)
         return {
             "evidence_id": f"evidence-{events[0].event_id}",
-            "collected_at": datetime.now(timezone.utc).isoformat(),
+            "collected_at": normalize_utc_timestamp(),
             "collection_method": "normalized_event_snapshot",
             "host": events[0].host,
             "alert": alert.to_dict() if alert else None,
             "event_ids": [event.event_id for event in events],
             "timestamps": [
-                self._event_record(event, {"timestamp": event.timestamp})
+                self._event_record(
+                    event,
+                    {
+                        "@timestamp": event.timestamp,
+                        "timestamp": event.timestamp,
+                    },
+                )
                 for event in events
             ],
             "process_information": process_information,
